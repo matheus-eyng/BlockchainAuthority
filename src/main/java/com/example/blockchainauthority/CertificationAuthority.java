@@ -1,5 +1,6 @@
 package com.example.blockchainauthority;
 
+import com.fasterxml.jackson.databind.DatabindException;
 import lombok.Getter;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.crypto.util.PrivateKeyFactory;
@@ -24,6 +25,7 @@ import java.security.interfaces.RSAPrivateCrtKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.RSAPublicKeySpec;
+import java.util.Date;
 
 @Component
 public class CertificationAuthority {
@@ -128,5 +130,10 @@ public class CertificationAuthority {
 
     private void loadCertificate() throws IOException {
         caCert = new X509CertificateHolder(Base64.decode(CA_CERT));
+    }
+
+    public Date sendPreCertificateToContract(X509CertificateHolder certificate) {
+        // Send certificate to contract, returns the timestamp response
+        return null;
     }
 }

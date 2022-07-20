@@ -1,10 +1,7 @@
 package com.example.blockchainauthority;
 
-import org.bouncycastle.asn1.ASN1Null;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERNull;
-import org.bouncycastle.asn1.x509.TBSCertificate;
-import org.bouncycastle.asn1.x509.V3TBSCertificateGenerator;
 import org.bouncycastle.cert.CertIOException;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
@@ -12,7 +9,6 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.bouncycastle.util.encoders.Base64;
-import org.bouncycastle.util.io.pem.PemReader;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -40,13 +36,28 @@ public class CertificateService {
     }
 
     public X509CertificateHolder issueCertificate(String pkcs10String) throws IOException {
+
         PKCS10CertificationRequest csr = convertPemToPKCS10(pkcs10String);
+
+        /*
+        Should contact the PersonRegistry smart contract
+        to see if the subject of the certificate request is registered properly
+         */
 
         X509CertificateHolder preCertificate = buildAndSignPreCertificate(csr);
 
+        /*
+        Send to Log smart contract
+         - The response from the log smart contract is a time stamp
+         - The timestamp must be used to generate a new certificate
+         - Return certificate to user
+         */
+
+        ////// TEMPORARY
         System.out.println(Base64.toBase64String(preCertificate.getEncoded()));
 
         return null;
+        //////
     }
 
     private PKCS10CertificationRequest convertPemToPKCS10(String pkcs10Pem) {
