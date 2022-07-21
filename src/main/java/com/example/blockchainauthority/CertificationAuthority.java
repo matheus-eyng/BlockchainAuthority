@@ -2,7 +2,9 @@ package com.example.blockchainauthority;
 
 import com.fasterxml.jackson.databind.DatabindException;
 import lombok.Getter;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
@@ -120,11 +122,11 @@ public class CertificationAuthority {
 
     private void buildContentSigner() throws IOException, OperatorCreationException {
         logger.info("BUILDING CONTENT SIGNER");
-        var signatureAlgorithm = new DefaultSignatureAlgorithmIdentifierFinder().find("SHA256WithRSA");
-        var digestAlgorithm = new DefaultDigestAlgorithmIdentifierFinder().find(signatureAlgorithm);
-        var builder = new BcRSAContentSignerBuilder(signatureAlgorithm, digestAlgorithm);
+        AlgorithmIdentifier signatureAlgorithm = new DefaultSignatureAlgorithmIdentifierFinder().find("SHA256WithRSA");
+        AlgorithmIdentifier digestAlgorithm = new DefaultDigestAlgorithmIdentifierFinder().find(signatureAlgorithm);
+        BcRSAContentSignerBuilder builder = new BcRSAContentSignerBuilder(signatureAlgorithm, digestAlgorithm);
 
-        var asymmetricKeyParameter  = PrivateKeyFactory.createKey(privateKey.getEncoded());
+        AsymmetricKeyParameter asymmetricKeyParameter  = PrivateKeyFactory.createKey(privateKey.getEncoded());
         contentSigner = builder.build(asymmetricKeyParameter);
     }
 
