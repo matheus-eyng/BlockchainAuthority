@@ -3,6 +3,7 @@ package com.example.blockchainauthority;
 import com.example.blockchainauthority.contract.BlockchainService;
 import com.example.blockchainauthority.contract.LoadedContracts;
 import com.example.blockchainauthority.contract.Log;
+import com.example.blockchainauthority.entities.Person;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
@@ -44,13 +45,14 @@ public class BlockchainAuthorityApplication {
 
         return args -> {
             logger.info("ISSUING PRE CERTIFICATE");
-            controller.issueCertificate(csr);
+//            controller.issueCertificate(csr);
 
             service.init();
-//            service.deployPersonRegistryContract();
-//            service.deployLogContract();
-//            service.deployCrlContract();
-            service.transact();
+            service.deployPersonRegistryContract();
+            service.deployLogContract();
+            service.deployCrlContract();
+
+            controller.registerPerson(new Person("Joao", "joao@email.com", "123456"));
 
 //            System.exit(0);
         };

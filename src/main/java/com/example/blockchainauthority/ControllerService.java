@@ -1,5 +1,7 @@
 package com.example.blockchainauthority;
 
+import com.example.blockchainauthority.contract.BlockchainService;
+import com.example.blockchainauthority.entities.Person;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.cert.CertIOException;
@@ -9,6 +11,8 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.bouncycastle.util.encoders.Base64;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -16,23 +20,32 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.util.Calendar;
 import java.util.Date;
 
 @Service
-public class CertificateService {
+public class ControllerService {
 
     static {
         Security.insertProviderAt(new BouncyCastleProvider(), 1);
     }
 
+    private static final Logger log = LoggerFactory.getLogger(ControllerService.class);
+
     private CertificationAuthority ca;
+    private BlockchainService blockchainService;
 
     @Autowired
-    public CertificateService(CertificationAuthority certificationAuthority) {
+    public ControllerService(CertificationAuthority certificationAuthority, BlockchainService blockchainService) {
         this.ca = certificationAuthority;
+        this.blockchainService = blockchainService;
     }
 
     public X509CertificateHolder issueCertificate(String pkcs10String) throws IOException {
@@ -101,5 +114,18 @@ public class CertificateService {
         certBuilder.addExtension(new ASN1ObjectIdentifier("1.3.6.1.4.1.11129.2.4.3"), true, DERNull.INSTANCE);
 
         return certBuilder.build(ca.getContentSigner());
+    }
+
+    public String processPersonRegistration(Person person) throws Exception {
+        log.info("Generating " + person.getName() + "'s keypair");
+        KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
+        keyGen.initialize(2048);
+        KeyPair keyPair = keyGen.generateKeyPair();
+        PublicKey publicKey = keyPair.getPublic();
+
+        // Hashes the public key
+        person.setPublicKeyHash(MessageDigest.getInstance("SHA-256").digest(publicKey.getEncoded()));
+
+        return blockchainService.addPersonToRegistry(person);
     }
 }

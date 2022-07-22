@@ -1,6 +1,7 @@
 package com.example.blockchainauthority.contract;
 
 import com.example.blockchainauthority.CertificationAuthority;
+import com.example.blockchainauthority.entities.Person;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -10,8 +11,9 @@ import org.web3j.protocol.core.RemoteFunctionCall;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.tx.gas.ContractGasProvider;
 
-import static com.example.blockchainauthority.contract.Contracts.*;
+import static com.example.blockchainauthority.contract.Contracts.CRL;
 import static com.example.blockchainauthority.contract.Contracts.LOG;
+import static com.example.blockchainauthority.contract.Contracts.PERSON_REGISTRY;
 
 @Service
 public class BlockchainService {
@@ -20,8 +22,8 @@ public class BlockchainService {
 
     private final CertificationAuthority ca;
     private final EthereumConnection connection;
-    private final String walletKey = "09db5beb729ae69c538f64ce74ea4d2dae7002d67e16578b98c700e00793cb66";
-    private final String walletAddress = "0xEa9f744c0ec3B9e862F82F1bED3e00E55D7E9EAC";
+    private final String walletKey = "3df3edab8c0d2c8189908412d67a9c0a831f2b96f17d445b0d79a98070eba7aa";
+    private final String walletAddress = "0xe745ED4354d3666680464BFE881617a019F424Ee";
     private final LoadedContracts loadedContracts;
 
     private Web3j web3;
@@ -37,14 +39,14 @@ public class BlockchainService {
     }
 
     public void init() {
-        log.info("INITIALIZING BLOCKCHAIN SERVICE");
+        log.info("Initializing blockchain service");
         this.web3 = connection.connectToBlockchain("http://localhost:7545");
         this.gasProvider = connection.buildGasProvider();
         this.credentials = connection.loadCaWallet(walletKey);
     }
 
     public void deployPersonRegistryContract() throws Exception {
-        log.info("DEPLOYING PERSON REGISTRY CONTRACT");
+        log.info("Deploying person registry contract...");
         PersonRegistry contract = PersonRegistry.
                 deploy(web3, credentials, gasProvider, walletAddress, ca.getPublicKey().getEncoded())
                 .send();
@@ -52,26 +54,54 @@ public class BlockchainService {
     }
 
     public void deployLogContract() throws Exception {
-        log.info("DEPLOYING LOG CONTRACT");
+        log.info("Deploying log contract...");
         Log contract = Log.
                 deploy(web3, credentials, gasProvider, walletAddress)
                 .send();
         loadedContracts.loadContract(LOG, contract.getContractAddress());
+
+        addAuthorityToLog(walletAddress);
     }
 
     public void deployCrlContract() throws Exception {
-        log.info("DEPLOYING CRL CONTRACT");
+        log.info("Deploying crl contract...");
         Crl contract = Crl.
                 deploy(web3, credentials, gasProvider, walletAddress, ca.getPublicKey().getEncoded())
                 .send();
         loadedContracts.loadContract(CRL, contract.getContractAddress());
     }
 
-    public void transact() throws Exception {
-        Log log = Log.load(loadedContracts.getContractAddress(LOG), this.web3, credentials, gasProvider);
-        RemoteFunctionCall<TransactionReceipt> transaction = log.addAuthority("0xEa9f744c0ec3B9e862F82F1bED3e00E55D7E9EAC");
+    private void addAuthorityToLog(String walletAddress) throws Exception {
+        log.info("Adding authority to log authorities list...");
+        Log logContract = Log.load(loadedContracts.getContractAddress(LOG), this.web3, credentials, gasProvider);
+        RemoteFunctionCall<TransactionReceipt> transaction = logContract.addAuthority(walletAddress);
+        TransactionReceipt receipt = transaction.send();
+        assert receipt.isStatusOK();
+    }
+
+    public String addPersonToRegistry(Person person) throws Exception {
+        log.info("Adding person to registry...");
+        PersonRegistry personRegistryContract = PersonRegistry
+                .load(
+                        loadedContracts.getContractAddress(PERSON_REGISTRY),
+                        web3,
+                        credentials,
+                        gasProvider);
+
+        RemoteFunctionCall<TransactionReceipt> transaction = personRegistryContract.registerPerson(
+                person.getName(),
+                person.getEmailAddress(),
+                person.getPublicKeyHash(),
+                person.getCpf());
+
         TransactionReceipt receipt = transaction.send();
         System.out.println(receipt.getLogs());
-        // Como pegar a resposta??
+        System.out.println(receipt.getLogs().get(0).getData());
+        return "Registered"; // FIXME
+    }
+
+    public void transact() throws Exception {
+        byte[] testBytes = new byte[32];
+        Log.Person person = new Log.Person("Joao", "joao@email.com", testBytes, "123456");
     }
 }
