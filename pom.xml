@@ -83,6 +83,7 @@
     </dependencies>
 
     <build>
+        <finalName>blockchain_authority</finalName>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
