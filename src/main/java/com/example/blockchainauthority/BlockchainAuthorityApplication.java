@@ -1,5 +1,6 @@
 package com.example.blockchainauthority;
 
+import com.example.blockchainauthority.contract.BlockchainService;
 import com.example.blockchainauthority.contract.EthereumConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,7 +20,7 @@ public class BlockchainAuthorityApplication {
     }
 
     @Bean
-    public CommandLineRunner commandLineRunner(ApplicationContext context, Controller controller, EthereumConnection handler) {
+    public CommandLineRunner commandLineRunner(ApplicationContext context, Controller controller, BlockchainService service) {
         final String csr = "-----BEGIN CERTIFICATE REQUEST-----\n" +
                 "MIIC3jCCAcYCAQAwgZgxCzAJBgNVBAYTAkJSMRcwFQYDVQQIDA5TYW50YSBDYXRh\n" +
                 "cmluYTEWMBQGA1UEBwwNRmxvcmlhbm9wb2xpczEcMBoGA1UECgwTRGVmYXVsdCBD\n" +
@@ -43,8 +44,10 @@ public class BlockchainAuthorityApplication {
             logger.info("ISSUING PRE CERTIFICATE");
             controller.issueCertificate(csr);
 
-            logger.info("CONNECTING TO BLOCKCHAIN");
-            handler.connectToBlockchain();
+            service.init();
+            service.deployPersonRegistryContract();
+            service.deployLogContract();
+            service.deployCrlContract();
 
             System.exit(0);
         };
