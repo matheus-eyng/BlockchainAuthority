@@ -1,14 +1,16 @@
 package com.example.blockchainauthority;
 
 import com.example.blockchainauthority.contract.BlockchainService;
-import com.example.blockchainauthority.contract.EthereumConnection;
+import com.example.blockchainauthority.contract.LoadedContracts;
+import com.example.blockchainauthority.contract.Log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.web3j.protocol.core.RemoteFunctionCall;
+import org.web3j.protocol.core.methods.response.TransactionReceipt;
 
 @SpringBootApplication
 public class BlockchainAuthorityApplication {
@@ -20,7 +22,7 @@ public class BlockchainAuthorityApplication {
     }
 
     @Bean
-    public CommandLineRunner commandLineRunner(ApplicationContext context, Controller controller, BlockchainService service) {
+    public CommandLineRunner commandLineRunner(LoadedContracts contracts, Controller controller, BlockchainService service) {
         final String csr = "-----BEGIN CERTIFICATE REQUEST-----\n" +
                 "MIIC3jCCAcYCAQAwgZgxCzAJBgNVBAYTAkJSMRcwFQYDVQQIDA5TYW50YSBDYXRh\n" +
                 "cmluYTEWMBQGA1UEBwwNRmxvcmlhbm9wb2xpczEcMBoGA1UECgwTRGVmYXVsdCBD\n" +
@@ -45,11 +47,12 @@ public class BlockchainAuthorityApplication {
             controller.issueCertificate(csr);
 
             service.init();
-            service.deployPersonRegistryContract();
-            service.deployLogContract();
-            service.deployCrlContract();
+//            service.deployPersonRegistryContract();
+//            service.deployLogContract();
+//            service.deployCrlContract();
+            service.transact();
 
-            System.exit(0);
+//            System.exit(0);
         };
     }
 }

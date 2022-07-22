@@ -4,35 +4,21 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.stereotype.Component;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @Component
 @Getter
 @Setter
 public class LoadedContracts {
 
-    private static PersonRegistry personRegistryContract;
-    private static Log logContract;
-    private static Crl crlContract;
+    private static Map<Contracts, String> loadedContracts = new HashMap<>();
 
-    public void loadLog(Log log) {
-        logContract = log;
+    public void loadContract(Contracts contractType, String address) {
+        loadedContracts.put(contractType, address);
     }
 
-    public void loadPersonRegistry(PersonRegistry personRegistry) {
-        personRegistryContract = personRegistry;
-    }
-
-    public void loadCrl(Crl crl) {
-        crlContract = crl;
-    }
-
-    public PersonRegistry getPersonRegistryContract() {
-        return personRegistryContract;
-    }
-
-    public Log getLogContract() {
-        return logContract;
-    }
-    public Crl getCrlContract() {
-        return crlContract;
+    public String getContractAddress(Contracts contractType) {
+        return loadedContracts.get(contractType);
     }
 }

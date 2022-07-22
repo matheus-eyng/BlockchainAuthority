@@ -6,7 +6,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.web3j.crypto.Credentials;
 import org.web3j.protocol.Web3j;
+import org.web3j.protocol.core.RemoteFunctionCall;
+import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.tx.gas.ContractGasProvider;
+
+import static com.example.blockchainauthority.contract.Contracts.*;
+import static com.example.blockchainauthority.contract.Contracts.LOG;
 
 @Service
 public class BlockchainService {
@@ -43,7 +48,7 @@ public class BlockchainService {
         PersonRegistry contract = PersonRegistry.
                 deploy(web3, credentials, gasProvider, walletAddress, ca.getPublicKey().getEncoded())
                 .send();
-        loadedContracts.loadPersonRegistry(contract);
+        loadedContracts.loadContract(PERSON_REGISTRY, contract.getContractAddress());
     }
 
     public void deployLogContract() throws Exception {
@@ -51,7 +56,7 @@ public class BlockchainService {
         Log contract = Log.
                 deploy(web3, credentials, gasProvider, walletAddress)
                 .send();
-        loadedContracts.loadLog(contract);
+        loadedContracts.loadContract(LOG, contract.getContractAddress());
     }
 
     public void deployCrlContract() throws Exception {
@@ -59,6 +64,14 @@ public class BlockchainService {
         Crl contract = Crl.
                 deploy(web3, credentials, gasProvider, walletAddress, ca.getPublicKey().getEncoded())
                 .send();
-        loadedContracts.loadCrl(contract);
+        loadedContracts.loadContract(CRL, contract.getContractAddress());
+    }
+
+    public void transact() throws Exception {
+        Log log = Log.load(loadedContracts.getContractAddress(LOG), this.web3, credentials, gasProvider);
+        RemoteFunctionCall<TransactionReceipt> transaction = log.addAuthority("0xEa9f744c0ec3B9e862F82F1bED3e00E55D7E9EAC");
+        TransactionReceipt receipt = transaction.send();
+        System.out.println(receipt.getLogs());
+        // Como pegar a resposta??
     }
 }
