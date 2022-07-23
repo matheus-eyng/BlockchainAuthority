@@ -53,6 +53,8 @@ public class BlockchainAuthorityApplication {
             service.deployCrlContract();
 
             controller.registerPerson(new Person("Joao", "joao@email.com", "123456"));
+            boolean isRegistered = service.checkIfRegistered("123456");
+            logger.info(String.valueOf(isRegistered));
 
 //            System.exit(0);
         };

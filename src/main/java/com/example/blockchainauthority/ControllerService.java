@@ -48,23 +48,26 @@ public class ControllerService {
         this.blockchainService = blockchainService;
     }
 
-    public X509CertificateHolder issueCertificate(String pkcs10String) throws IOException {
+    public X509CertificateHolder issueCertificate(String pkcs10String, String cpf) throws IOException {
+
+        if (!blockchainService.checkIfRegistered(cpf)) {
+            throw new RuntimeException("User not registered!");
+        }
 
         PKCS10CertificationRequest csr = convertPemToPKCS10(pkcs10String);
 
-        /*
-        Should contact the PersonRegistry smart contract
-        to see if the subject of the certificate request is registered properly
-         */
-
         X509CertificateHolder preCertificate = buildAndSignPreCertificate(csr);
-
+        // Assim que deve ser feito o hash byte32 do certificado
+//        byte[] bytes = MessageDigest.getInstance("SHA-256").digest(preCertificate.getEncoded());
         /*
-        Send to Log smart contract
-         - The response from the log smart contract is a time stamp
-         - The timestamp must be used to generate a new certificate
-         - Return certificate to user
+        Mandar pre certificado pro log
+        Pegar o resultado (timestamp)
+        Emitir outro certificado e adcionar a timestamp (em algum lugar)
+        retornar esse certificado pra pessoa
+
+        fazer revogacao...
          */
+//        preCertificate.getSubjectPublicKeyInfo().getEncoded(); -- assim que pega a chave publica do certificaod
 
         ////// TEMPORARY
         System.out.println(Base64.toBase64String(preCertificate.getEncoded()));

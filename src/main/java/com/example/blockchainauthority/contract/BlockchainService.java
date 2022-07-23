@@ -22,8 +22,8 @@ public class BlockchainService {
 
     private final CertificationAuthority ca;
     private final EthereumConnection connection;
-    private final String walletKey = "3df3edab8c0d2c8189908412d67a9c0a831f2b96f17d445b0d79a98070eba7aa";
-    private final String walletAddress = "0xe745ED4354d3666680464BFE881617a019F424Ee";
+    private final String walletKey = "f7248a9c686365f7933098a52233d0dbe3368f8d1cb77f3547fadd3c0444f56e";
+    private final String walletAddress = "0x43CacAb2D7F6245cb1Aee495EA64D14A56551D0C";
     private final LoadedContracts loadedContracts;
 
     private Web3j web3;
@@ -97,11 +97,34 @@ public class BlockchainService {
         TransactionReceipt receipt = transaction.send();
         System.out.println(receipt.getLogs());
         System.out.println(receipt.getLogs().get(0).getData());
-        return "Registered"; // FIXME
+        return "Registered";
     }
 
-    public void transact() throws Exception {
-        byte[] testBytes = new byte[32];
-        Log.Person person = new Log.Person("Joao", "joao@email.com", testBytes, "123456");
+    public boolean checkIfRegistered(String cpf) {
+        log.info("Adding person to registry...");
+        PersonRegistry personRegistryContract = PersonRegistry
+                .load(
+                        loadedContracts.getContractAddress(PERSON_REGISTRY),
+                        web3,
+                        credentials,
+                        gasProvider);
+
+        RemoteFunctionCall<Boolean> transaction = personRegistryContract.isCpfRegistered(cpf);
+        try {
+            return transaction.send();
+        } catch (Exception e) {
+            return false;
+        }
     }
+
+    public void addAuthority(String address) throws Exception {
+        Log logContract = Log.load(
+                loadedContracts.getContractAddress(LOG),
+                web3,
+                credentials,
+                gasProvider);
+        RemoteFunctionCall transaction = logContract.addAuthority(address);
+        transaction.send();
+    }
+
 }

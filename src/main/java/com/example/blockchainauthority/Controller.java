@@ -4,6 +4,7 @@ import com.example.blockchainauthority.entities.Person;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
@@ -20,8 +21,8 @@ public class Controller {
     }
 
     @PostMapping("issue-certificate")
-    public String issueCertificate(@RequestBody String csr) throws IOException {
-        service.issueCertificate(csr);
+    public String issueCertificate(@RequestBody String csr, @RequestParam String cpf) throws IOException {
+        service.issueCertificate(csr, cpf);
         return null;
     }
 
