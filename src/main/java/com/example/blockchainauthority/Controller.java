@@ -38,4 +38,9 @@ public class Controller {
             throw new RuntimeException(e);
         }
     }
+
+    @PostMapping("revoke-certificate")
+    public String revokeCertificate(@RequestBody String certificateBase64) throws Exception {
+        return service.revokeCertificate(certificateBase64);
+    }
 }

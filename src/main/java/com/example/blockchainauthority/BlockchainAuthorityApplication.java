@@ -53,7 +53,8 @@ public class BlockchainAuthorityApplication {
             service.deployCrlContract();
 
             controller.registerPerson(new Person("Joao", "joao@email.com", "123456"));
-            controller.issueCertificate(csr, "123456");
+            String certificateB64 = controller.issueCertificate(csr, "123456");
+            controller.revokeCertificate(certificateB64);
 //            boolean isRegistered = service.checkIfRegistered("123456");
 //            logger.info(String.valueOf(isRegistered));
 

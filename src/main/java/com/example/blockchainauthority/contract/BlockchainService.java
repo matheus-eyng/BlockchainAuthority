@@ -12,6 +12,10 @@ import org.web3j.protocol.core.RemoteFunctionCall;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.tx.gas.ContractGasProvider;
 
+import java.io.IOException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+
 import static com.example.blockchainauthority.contract.Contracts.CRL;
 import static com.example.blockchainauthority.contract.Contracts.LOG;
 import static com.example.blockchainauthority.contract.Contracts.PERSON_REGISTRY;
@@ -158,6 +162,28 @@ public class BlockchainService {
         RemoteFunctionCall<TransactionReceipt> transaction = logContract.appendCertificate(logPerson, certificateHash, ca.getPublicKey().getEncoded());
         TransactionReceipt receipt = transaction.send();
         return receipt.getBlockHash().getBytes();
+    }
+
+    public String addRevokedCertificateToCrl(X509CertificateHolder certificateHolder) throws Exception {
+        log.info("Loading certificate into CRL contract...");
+        Crl crl = Crl
+                .load(
+                        loadedContracts.getContractAddress(CRL),
+                        web3,
+                        credentials,
+                        gasProvider);
+
+        MessageDigest hasher = MessageDigest.getInstance("SHA-256");
+
+        RemoteFunctionCall transaction = crl.revokeCertificate(
+                hasher.digest(certificateHolder.getEncoded()),
+                certificateHolder.getSignature(),
+                certificateHolder.getSubject().toString(),
+                certificateHolder.getSubjectPublicKeyInfo().getEncoded());
+
+        transaction.send();
+        log.info("Certificate revoked!");
+        return "Success";
     }
 
 }

@@ -83,6 +83,11 @@ public class ControllerService {
         return buildAndSignCertificate(csr, timestamp);
     }
 
+    public String revokeCertificate(String certificateBase64) throws Exception {
+        X509CertificateHolder certificateHolder = new X509CertificateHolder(Base64.decode(certificateBase64));
+        return blockchainService.addRevokedCertificateToCrl(certificateHolder);
+    }
+
     private PKCS10CertificationRequest convertPemToPKCS10(String pkcs10Pem) {
         try {
             PEMParser pemParser = new PEMParser(new StringReader(pkcs10Pem));
