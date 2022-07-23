@@ -1,6 +1,7 @@
 package com.example.blockchainauthority;
 
 import com.example.blockchainauthority.contract.BlockchainService;
+import com.example.blockchainauthority.contract.PersonRegistry;
 import com.example.blockchainauthority.entities.Person;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERNull;
@@ -20,6 +21,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
+import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
@@ -27,6 +29,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -48,15 +52,22 @@ public class ControllerService {
         this.blockchainService = blockchainService;
     }
 
-    public X509CertificateHolder issueCertificate(String pkcs10String, String cpf) throws IOException {
+    public X509CertificateHolder issueCertificate(String pkcs10String, String cpf) throws Exception {
+        MessageDigest hasher = MessageDigest.getInstance("SHA-256");
 
         if (!blockchainService.checkIfRegistered(cpf)) {
             throw new RuntimeException("User not registered!");
         }
 
+
         PKCS10CertificationRequest csr = convertPemToPKCS10(pkcs10String);
 
+
         X509CertificateHolder preCertificate = buildAndSignPreCertificate(csr);
+
+        PersonRegistry.Person person = blockchainService.getPersonFromRegistry(cpf);
+
+        byte[] timestamp = blockchainService.loadPreCertificateIntoLog(hasher.digest(preCertificate.getEncoded()), person);
         // Assim que deve ser feito o hash byte32 do certificado
 //        byte[] bytes = MessageDigest.getInstance("SHA-256").digest(preCertificate.getEncoded());
         /*
@@ -67,13 +78,9 @@ public class ControllerService {
 
         fazer revogacao...
          */
-//        preCertificate.getSubjectPublicKeyInfo().getEncoded(); -- assim que pega a chave publica do certificaod
 
-        ////// TEMPORARY
-        System.out.println(Base64.toBase64String(preCertificate.getEncoded()));
-
-        return null;
-        //////
+        log.info("Issuing final certificate...");
+        return buildAndSignCertificate(csr, timestamp);
     }
 
     private PKCS10CertificationRequest convertPemToPKCS10(String pkcs10Pem) {
@@ -115,6 +122,34 @@ public class ControllerService {
 
         // POISON EXTENSION -- PRE-CERTIFICATE
         certBuilder.addExtension(new ASN1ObjectIdentifier("1.3.6.1.4.1.11129.2.4.3"), true, DERNull.INSTANCE);
+
+        return certBuilder.build(ca.getContentSigner());
+    }
+
+    private X509CertificateHolder buildAndSignCertificate(PKCS10CertificationRequest csr, byte[] timestamp) throws CertIOException {
+
+        BigInteger serialNumber = genSerialNumber();
+
+        // START DATE -- today
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.DATE, -1);
+        Date startDate = calendar.getTime();
+
+        // END DATE -- 1 year from today
+        calendar.add(Calendar.YEAR, 1);
+        Date endDate = calendar.getTime();
+
+
+        X509v3CertificateBuilder certBuilder = new X509v3CertificateBuilder(
+                ca.getCaCert().getSubject(),
+                serialNumber,
+                startDate,
+                endDate,
+                csr.getSubject(),
+                csr.getSubjectPublicKeyInfo());
+
+        // POISON EXTENSION -- PRE-CERTIFICATE
+        certBuilder.addExtension(new ASN1ObjectIdentifier("1.2.3.4.5.6.7.8"), false, timestamp);
 
         return certBuilder.build(ca.getContentSigner());
     }

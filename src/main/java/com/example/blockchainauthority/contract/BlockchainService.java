@@ -2,6 +2,7 @@ package com.example.blockchainauthority.contract;
 
 import com.example.blockchainauthority.CertificationAuthority;
 import com.example.blockchainauthority.entities.Person;
+import org.bouncycastle.cert.X509CertificateHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -22,8 +23,8 @@ public class BlockchainService {
 
     private final CertificationAuthority ca;
     private final EthereumConnection connection;
-    private final String walletKey = "f7248a9c686365f7933098a52233d0dbe3368f8d1cb77f3547fadd3c0444f56e";
-    private final String walletAddress = "0x43CacAb2D7F6245cb1Aee495EA64D14A56551D0C";
+    private final String walletKey = "d0caf0de7d002a75d5441fc21b0a90cd55fac7650cb460099852567cc1beadd4";
+    private final String walletAddress = "0x7223e1978EfF7b45F36F4150F9c870A7655ad467";
     private final LoadedContracts loadedContracts;
 
     private Web3j web3;
@@ -77,6 +78,7 @@ public class BlockchainService {
         RemoteFunctionCall<TransactionReceipt> transaction = logContract.addAuthority(walletAddress);
         TransactionReceipt receipt = transaction.send();
         assert receipt.isStatusOK();
+        log.info("Authority added!");
     }
 
     public String addPersonToRegistry(Person person) throws Exception {
@@ -97,11 +99,12 @@ public class BlockchainService {
         TransactionReceipt receipt = transaction.send();
         System.out.println(receipt.getLogs());
         System.out.println(receipt.getLogs().get(0).getData());
-        return "Registered";
+        log.info("Person with cpf: " + person.getCpf() + " was registered to the blockchain!");
+        return "Person with cpf: " + person.getCpf() + " was registered to the blockchain";
     }
 
     public boolean checkIfRegistered(String cpf) {
-        log.info("Adding person to registry...");
+        log.info("Checking if cpf " + cpf + " is registered in the blockchain...");
         PersonRegistry personRegistryContract = PersonRegistry
                 .load(
                         loadedContracts.getContractAddress(PERSON_REGISTRY),
@@ -117,7 +120,21 @@ public class BlockchainService {
         }
     }
 
+    public PersonRegistry.Person getPersonFromRegistry(String cpf) throws Exception {
+        PersonRegistry personRegistryContract = PersonRegistry
+                .load(
+                        loadedContracts.getContractAddress(PERSON_REGISTRY),
+                        web3,
+                        credentials,
+                        gasProvider);
+
+        RemoteFunctionCall<PersonRegistry.Person> transaction = personRegistryContract.getByCpf(cpf);
+        return transaction.send();
+    }
+
+
     public void addAuthority(String address) throws Exception {
+        log.info("Adding authroity to blockchain...");
         Log logContract = Log.load(
                 loadedContracts.getContractAddress(LOG),
                 web3,
@@ -125,6 +142,22 @@ public class BlockchainService {
                 gasProvider);
         RemoteFunctionCall transaction = logContract.addAuthority(address);
         transaction.send();
+        log.info("Authority added!");
+    }
+
+    public byte[] loadPreCertificateIntoLog(byte[] certificateHash, PersonRegistry.Person person) throws Exception {
+        log.info("Loading pre certificate into Log contract...");
+        Log logContract = Log
+                .load(
+                        loadedContracts.getContractAddress(LOG),
+                        web3,
+                        credentials,
+                        gasProvider);
+
+        Log.Person logPerson = new Log.Person(person.name, person.emailAddress, person.publicKeyHash, person.cpf);
+        RemoteFunctionCall<TransactionReceipt> transaction = logContract.appendCertificate(logPerson, certificateHash, ca.getPublicKey().getEncoded());
+        TransactionReceipt receipt = transaction.send();
+        return receipt.getBlockHash().getBytes();
     }
 
 }

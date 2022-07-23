@@ -1,6 +1,8 @@
 package com.example.blockchainauthority;
 
 import com.example.blockchainauthority.entities.Person;
+import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.util.encoders.Base64;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,9 +23,10 @@ public class Controller {
     }
 
     @PostMapping("issue-certificate")
-    public String issueCertificate(@RequestBody String csr, @RequestParam String cpf) throws IOException {
-        service.issueCertificate(csr, cpf);
-        return null;
+    public String issueCertificate(@RequestBody String csr, @RequestParam String cpf) throws Exception {
+        X509CertificateHolder certificate = service.issueCertificate(csr, cpf);
+        System.out.println(Base64.toBase64String(certificate.getEncoded()));
+        return Base64.toBase64String(certificate.getEncoded());
     }
 
     @PostMapping("register-user")
