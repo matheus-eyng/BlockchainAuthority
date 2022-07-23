@@ -1,6 +1,10 @@
 package com.example.blockchainauthority;
 
+import com.fasterxml.jackson.databind.DatabindException;
 import lombok.Getter;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
@@ -23,6 +27,7 @@ import java.security.interfaces.RSAPrivateCrtKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.RSAPublicKeySpec;
+import java.util.Date;
 
 @Component
 public class CertificationAuthority {
@@ -31,7 +36,7 @@ public class CertificationAuthority {
         Security.insertProviderAt(new BouncyCastleProvider(), 1);
     }
 
-    private String privateKeyB64 = "MIIEpQIBAAKCAQEA7830NJui0HymB3AXoskv4Rcs0IFrjKgY83UN0UCrfe2Bum1J\n" +
+    private final String PRIVATEKEYB64 = "MIIEpQIBAAKCAQEA7830NJui0HymB3AXoskv4Rcs0IFrjKgY83UN0UCrfe2Bum1J\n" +
             "zDZO5Gu0eBd9QBA6PhV8vUiV5fJl43wztOVVHUn4SbUjfI3cDwOz4MScsbGFNwvv\n" +
             "MFzbldo1usJ9iCcEba4XKaMuUl3w9AzSqNPjEW88bzCWcJ3DetTHMIe/MkmKRm6v\n" +
             "w1NrqNjjGPPru4nd8OM8lmqKZlAKiLHXQzckL/YiA91Qade1hD15OpRqimOihbZt\n" +
@@ -57,6 +62,32 @@ public class CertificationAuthority {
             "QYVYfmJN1cnjD80lFvB+v93T6IC3w0/z8FOWuRLhL4SpTrMdxh8ZAJS0nSCcUfpe\n" +
             "dJ9x9wQ8JMV7QrVC9HR9bxx6eKZRBwkZS2yhN2v3m7TE7Rth96CLM5U=";
 
+
+    private final String CA_CERT =
+            "MIIEPTCCAyWgAwIBAgIUY889uyapvxyR+/o8xkpteSUcwvAwDQYJKoZIhvcNAQEL\n" +
+            "BQAwgawxCzAJBgNVBAYTAkJSMRcwFQYDVQQIDA5TYW50YSBDYXRhcmluYTEWMBQG\n" +
+            "A1UEBwwNRmxvcmlhbm9wb2xpczENMAsGA1UECgwEVUZTQzEoMCYGA1UECwwfQmxv\n" +
+            "Y2tjaGFpbiBhbmQgQ3J5cHRvY3VycmVuY2llczEQMA4GA1UEAwwHVGVzdCBDQTEh\n" +
+            "MB8GCSqGSIb3DQEJARYSZW1haWxAcHJvdmlkZXIuY29tMCAXDTIyMDcyMDE2MjIw\n" +
+            "NVoYDzMwMjExMTIwMTYyMjA1WjCBrDELMAkGA1UEBhMCQlIxFzAVBgNVBAgMDlNh\n" +
+            "bnRhIENhdGFyaW5hMRYwFAYDVQQHDA1GbG9yaWFub3BvbGlzMQ0wCwYDVQQKDARV\n" +
+            "RlNDMSgwJgYDVQQLDB9CbG9ja2NoYWluIGFuZCBDcnlwdG9jdXJyZW5jaWVzMRAw\n" +
+            "DgYDVQQDDAdUZXN0IENBMSEwHwYJKoZIhvcNAQkBFhJlbWFpbEBwcm92aWRlci5j\n" +
+            "b20wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDvzfQ0m6LQfKYHcBei\n" +
+            "yS/hFyzQgWuMqBjzdQ3RQKt97YG6bUnMNk7ka7R4F31AEDo+FXy9SJXl8mXjfDO0\n" +
+            "5VUdSfhJtSN8jdwPA7PgxJyxsYU3C+8wXNuV2jW6wn2IJwRtrhcpoy5SXfD0DNKo\n" +
+            "0+MRbzxvMJZwncN61Mcwh78ySYpGbq/DU2uo2OMY8+u7id3w4zyWaopmUAqIsddD\n" +
+            "NyQv9iID3VBp17WEPXk6lGqKY6KFtm0du1F1vyTpOBAKXEGZ7+SVXYpA2dOqzHQJ\n" +
+            "jUyb/rIHDsTU1XkzoH0CcWzei2slNXHxPdnmJg2DEVUpVS2HjKDyTMsmIUPNOgZD\n" +
+            "Z9MhAgMBAAGjUzBRMB0GA1UdDgQWBBRyU7a1zOaxGnEGUPFA7MyLd6AVFTAfBgNV\n" +
+            "HSMEGDAWgBRyU7a1zOaxGnEGUPFA7MyLd6AVFTAPBgNVHRMBAf8EBTADAQH/MA0G\n" +
+            "CSqGSIb3DQEBCwUAA4IBAQBFQojE3vu3c6dCbb9adaUFxXSRIrEV8jtm+hvnCKJv\n" +
+            "nIDzmuiac20lTwb209faVfm5F6C7zpmAoEuVzOMnSBvn0c3ON497eVwHD5ToDVTt\n" +
+            "7I+EoKS527pVogBxx1gE6DocgjN7ttFmBWE7PVnHfJ1AHBbEKDEVlbk1ZHwmeAtX\n" +
+            "tx/5jsKrDDgG+4u1RCotqQay6Bd5GbjPuHjL4H3aSlD3Ixr6yXku7ppG9SKY6evw\n" +
+            "1TyBChD+6iAHckm6+bkXVZ55aOeDYRqgsFW+SQRF+jzPDuW6Ubri+5+Ha2iunW0G\n" +
+            "OqDnf9UCWEsQXVUhvyWBuH9OQJ3FqiA+VdvvkQuEmLb9";
+
     private static Logger logger = LoggerFactory.getLogger(CertificationAuthority.class);
 
     private PrivateKey privateKey;
@@ -64,18 +95,23 @@ public class CertificationAuthority {
     @Getter
     private PublicKey publicKey;
 
+    @Getter
+    private X509CertificateHolder caCert;
+
+    @Getter
     private ContentSigner contentSigner;
 
 
     public CertificationAuthority() throws NoSuchAlgorithmException, InvalidKeySpecException, IOException, OperatorCreationException {
         loadKeyPair();
         buildContentSigner();
+        loadCertificate();
     }
 
     private void loadKeyPair() throws NoSuchAlgorithmException, InvalidKeySpecException {
         logger.info("LOADING PRIVATE KEY");
         KeyFactory factory = KeyFactory.getInstance("RSA");
-        PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(Base64.decode(privateKeyB64));
+        PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(Base64.decode(PRIVATEKEYB64));
         privateKey = factory.generatePrivate(keySpec);
 
         logger.info("LOADING PUBLIC KEY");
@@ -86,11 +122,20 @@ public class CertificationAuthority {
 
     private void buildContentSigner() throws IOException, OperatorCreationException {
         logger.info("BUILDING CONTENT SIGNER");
-        var signatureAlgorithm = new DefaultSignatureAlgorithmIdentifierFinder().find("SHA256WithRSA");
-        var digestAlgorithm = new DefaultDigestAlgorithmIdentifierFinder().find(signatureAlgorithm);
-        var builder = new BcRSAContentSignerBuilder(signatureAlgorithm, digestAlgorithm);
+        AlgorithmIdentifier signatureAlgorithm = new DefaultSignatureAlgorithmIdentifierFinder().find("SHA256WithRSA");
+        AlgorithmIdentifier digestAlgorithm = new DefaultDigestAlgorithmIdentifierFinder().find(signatureAlgorithm);
+        BcRSAContentSignerBuilder builder = new BcRSAContentSignerBuilder(signatureAlgorithm, digestAlgorithm);
 
-        var asymmetricKeyParameter  = PrivateKeyFactory.createKey(privateKey.getEncoded());
+        AsymmetricKeyParameter asymmetricKeyParameter  = PrivateKeyFactory.createKey(privateKey.getEncoded());
         contentSigner = builder.build(asymmetricKeyParameter);
+    }
+
+    private void loadCertificate() throws IOException {
+        caCert = new X509CertificateHolder(Base64.decode(CA_CERT));
+    }
+
+    public Date sendPreCertificateToContract(X509CertificateHolder certificate) {
+        // Send certificate to contract, returns the timestamp response
+        return null;
     }
 }
